@@ -1,0 +1,4 @@
+CompileFlags:
+  Add: [-Wno-unknown-warning-option, -std=c++20]
+  Remove: [-m*, -f*]
+  Compiler: xtensa-esp32-elf-g++
