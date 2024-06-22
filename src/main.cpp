@@ -1,8 +1,14 @@
 #include "RoboBasement.hpp"
 #include "SmartServoBus.hpp"
-#include <chrono>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <iostream>
 #include <thread>
+
+const char* ssid = "ESP32";
+const char* password = "123456789";
+
+WiFiServer server(23);
 
 using namespace lx16a;
 
@@ -17,9 +23,9 @@ UltrasonicSensor ultrasonicSensors[numSensors] = {
     UltrasonicSensor(4, 19, maxDistance),
 };
 
+bool stopRequested = false;
 void Collision() {
     int numMeasurements = 5;
-    bool stopRequested = false; 
 
     while (true) {
         bool isAnySensorClose = false;
@@ -42,11 +48,24 @@ void Collision() {
             stopRequested = false;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
+        delay(100);
     }
 }
 
 void setup() {
+    Serial.begin(115200);
+
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Connecting to WiFi...");
+    }
+
+    server.begin();
+
+    Serial.println("Connected to WiFi");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
     motor.motorSetup();
 
     Motor::Parameters params;
@@ -54,7 +73,8 @@ void setup() {
     params.wheelDistance = 10;
 
     servoBus.begin(1, UART_NUM_2, GPIO_NUM_14);
-    ////////////////////////////////////////
+
+    //////////////MOVEMENT//////////////
     std::thread collisionThread(Collision);
     collisionThread.detach();
 
@@ -67,4 +87,19 @@ void setup() {
 }
 
 void loop() {
+    WiFiClient client = server.available();
+
+    if (client) {
+        while (client.connected()) {
+            if (client.available()) {
+                char c = client.read();
+                Serial.write(c);
+            }
+
+            client.print(stopRequested);
+        }
+        // close the connection:
+        client.stop();
+        Serial.println("Client Disconnected.");
+    }
 }
