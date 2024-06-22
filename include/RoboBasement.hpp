@@ -5,5 +5,7 @@
 #include <Arduino.h>
 
 #include "Motor.hpp"
+#include "Ultrasonic.hpp"
+
 
 #endif // ROBOBASEMENT_HPP

@@ -7,45 +7,102 @@
 #include <chrono>
 #include <thread>
 
+auto& man = rb::Manager::get();
+
 // The Motor class represents a motor with basic movement capabilities.
+/**
+ * @brief The Motor class represents a motor in a robot.
+ */
 class Motor {
     std::atomic<bool> stopRequested{false}; 
 public:
     // Structure to hold parameters
+    /**
+     * @brief The Parameters struct contains the parameters for the motor.
+     */
     struct Parameters {
-        int wheelDistance; // in mm
-        int wheelRadius; // in mm
+        int wheelDistance; /**< The distance between the wheels of the motor, in millimeters. */
+        int wheelRadius; /**< The radius of the wheels, in millimeters. */
         int encoderTicksPerRevolution = 2000;
 
-        float mmToTicks = encoderTicksPerRevolution / (2 * M_PI * wheelRadius);
-        float ticksToMm = 2.f * M_PI * wheelRadius / encoderTicksPerRevolution;
+        float mmToTicks = encoderTicksPerRevolution / (2 * M_PI * wheelRadius); /**< Conversion factor from millimeters to encoder ticks. */
+        float ticksToMm = 2.f * M_PI * wheelRadius / encoderTicksPerRevolution; /**< Conversion factor from encoder ticks to millimeters. */
     };
 
+    void motorSetup() {
+        man.install();
+    }
+
     // Setter methods for motor IDs
+    /**
+     * @brief Sets the ID of the left motor.
+     * @param id The ID of the left motor.
+     */
     void setLeftMotorId(int id);
+    
+    /**
+     * @brief Sets the ID of the right motor.
+     * @param id The ID of the right motor.
+     */
     void setRightMotorId(int id);
 
     // Basic movements
-    // Initiates forward movement of the motor at a specified speed and for a given distance.
-    // Optionally, the motor can be stopped automatically at the end of the movement.
+    /**
+     * @brief Initiates forward movement of the motor at a specified speed and for a given distance.
+     * @param speed The speed of the motor.
+     * @param distance The distance to move.
+     * @param stopAtEnd Flag indicating whether to stop the motor automatically at the end of the movement.
+     */
     void moveForward(int speed, int distance, bool stopAtEnd = true);
-    // Moves the motor backward at a given speed.
-    void moveBackward(int speed, int distance, bool stopAtEnd);
-    // Turns the motor left at a given speed.
-    void turnLeft(int speed, int angle);
-    // Turns the motor right at a given speed.
-    void turnRight(int speed, int angle);
-    // Makes the motor arc left at given inner and outer speeds.
-    void arcLeft(int speed, int angle, int radius);
-    // Makes the motor arc right at given inner and outer speeds.
-    void arcRight(int speed, int angle, int radius);
-    // Stops the motor.
-    void stop();
     
+    /**
+     * @brief Moves the motor backward at a given speed.
+     * @param speed The speed of the motor.
+     * @param distance The distance to move.
+     * @param stopAtEnd Flag indicating whether to stop the motor automatically at the end of the movement.
+     */
+    void moveBackward(int speed, int distance, bool stopAtEnd);
+    
+    /**
+     * @brief Turns the motor left at a given speed.
+     * @param speed The speed of the motor.
+     * @param angle The angle to turn.
+     */
+    void turnLeft(int speed, int angle);
+    
+    /**
+     * @brief Turns the motor right at a given speed.
+     * @param speed The speed of the motor.
+     * @param angle The angle to turn.
+     */
+    void turnRight(int speed, int angle);
+    
+    /**
+     * @brief Makes the motor arc left at given inner and outer speeds.
+     * @param speed The speed of the motor.
+     * @param angle The angle to arc.
+     * @param radius The radius of the arc.
+     */
+    void arcLeft(int speed, int angle, int radius);
+    
+    /**
+     * @brief Makes the motor arc right at given inner and outer speeds.
+     * @param speed The speed of the motor.
+     * @param angle The angle to arc.
+     * @param radius The radius of the arc.
+     */
+    void arcRight(int speed, int angle, int radius);
+    
+    /**
+     * @brief Requests the motor to stop.
+     */
     void requestStop() {
         stopRequested.store(true); // Set the stop flag
     }
 
+    /**
+     * @brief Resets the stop request flag at the start of a movement.
+     */
     void resetStopRequest() {
         stopRequested.store(false); // Reset the stop flag at the start of a movement
     }
@@ -56,13 +113,16 @@ private:
     rb::MotorId leftMotorId;
     rb::MotorId rightMotorId;
 
-    // Sets the speed of the motor with a given ID.
+    /**
+     * @brief Sets the speed of the motor with a given ID.
+     * @param motorId The ID of the motor.
+     * @param speed The speed to set.
+     * @param durationMs The duration for which to set the speed.
+     */
     void setMotorSpeed(int motorId, int speed, int durationMs);
 };
 
 // Implementation
-
-auto& man = rb::Manager::get();
 
 void Motor::setLeftMotorId(int id) {
     switch (id) {
@@ -113,8 +173,9 @@ void Motor::moveForward(int speed, int distance, bool stopAtEnd) {
 
     while (ticks_M1 < distance) {
         while (stopRequested.load()) { 
-            delay(10);
+            delay(10); 
         }
+        // if(stopRequested.load()) { break; } 
         man.motor(leftMotorId).speed(-speed);
         man.motor(rightMotorId).speed(speed);
 
@@ -281,13 +342,6 @@ void Motor::arcRight(int speed, int angle, int radius) {
     }
 
     // Stop motors at the end
-    man.motor(leftMotorId).speed(0);
-    man.motor(rightMotorId).speed(0);
-}
-
-void Motor::stop() {
-    stopRequested.store(true);
-    delay(10); // Wait for the stop request to be processed
     man.motor(leftMotorId).speed(0);
     man.motor(rightMotorId).speed(0);
 }
