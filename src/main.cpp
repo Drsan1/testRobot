@@ -1,24 +1,29 @@
-#include "Motor.hpp" // Include the Motor class definition
+#include "RoboBasement.hpp"
 #include <iostream>
+#include <thread>
+#include <chrono> 
 
-Motor motor; // Create a Motor object
+Motor motor;
+
+void Collision() { 
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000)); // Add us sensor here
+    motor.stop();
+}
 
 void setup() {
-    Motor::Parameters params; // Create a Parameters object
-    params.wheelRadius = 5; // Set the wheel radius
-    params.wheelDistance = 10; // Set the distance between wheels
+    Motor::Parameters params;
+    params.wheelRadius = 5;
+    params.wheelDistance = 10;
 
-    motor.setParameters(params); // Apply parameters to the motor
+    std::thread collisionThread(Collision); 
+    collisionThread.detach(); 
 
-    motor.setLeftMotorId(1); // Set the left motor ID
-    motor.setRightMotorId(2); // Set the right motor ID
+    motor.setLeftMotorId(1);
+    motor.setRightMotorId(2);
 
-    delay(1000);
-    // motor.moveStraight(100, 250);
-
+    motor.moveForward(100, 9999);
 }
 
 void loop() {
-    // Put your main code here, to run repeatedly:
-    // For example, motor.driveForward();
+    
 }
